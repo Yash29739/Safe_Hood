@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:safe_hood/firestore_services/firestore_service.dart';
 import 'package:safe_hood/login-signup/forgotPassword.dart';
 import 'package:safe_hood/login-signup/signup_screen.dart';
-import 'package:safe_hood/users/LandingScreen.dart';
+import 'package:safe_hood/mainScreens/LandingScreen.dart';
 import 'package:safe_hood/widgets/popup.dart';
 
 class LoginScreen extends StatefulWidget {

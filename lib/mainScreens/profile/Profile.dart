@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:safe_hood/firestore_services/firestore_service.dart';
 import 'package:safe_hood/login-signup/login_screen.dart';
 import 'package:safe_hood/mainScreens/profile/editingScreen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
