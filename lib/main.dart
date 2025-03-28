@@ -22,7 +22,6 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'SafeHood',
       theme: ThemeData(primarySwatch: Colors.purple),
-
       home: const SplashScreen(),
       routes: {
         '/landingScreen': (content) => const LandingScreen(),

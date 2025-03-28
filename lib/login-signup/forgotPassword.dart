@@ -2,7 +2,7 @@ import 'package:bcrypt/bcrypt.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:safe_hood/login-signup/login_screen.dart';
-import 'package:safe_hood/users/LandingScreen.dart';
+import 'package:safe_hood/mainScreens/LandingScreen.dart';
 import 'package:safe_hood/widgets/popup.dart';
 
 class ForgotPassword extends StatefulWidget {

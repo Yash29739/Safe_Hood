@@ -4,6 +4,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 
 class NoticeBoardScreen extends StatefulWidget {
+  const NoticeBoardScreen({super.key});
+
   @override
   _NoticeBoardScreenState createState() => _NoticeBoardScreenState();
 }

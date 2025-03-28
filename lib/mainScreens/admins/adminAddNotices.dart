@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 
 class AdminNoticeBoard extends StatefulWidget {
+  const AdminNoticeBoard({super.key});
+
   @override
   _AdminNoticeBoardState createState() => _AdminNoticeBoardState();
 }
