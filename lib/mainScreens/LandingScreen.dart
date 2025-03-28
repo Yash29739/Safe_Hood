@@ -7,7 +7,6 @@ import 'package:safe_hood/mainScreens/admins/dashbroadadmin.dart';
 import 'package:safe_hood/mainScreens/apartmentChat_screen.dart';
 import 'package:safe_hood/mainScreens/nearbyShops_screen.dart';
 import 'package:safe_hood/mainScreens/profile/Profile.dart';
-import 'package:safe_hood/users/SafeHoodDashboard.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LandingScreen extends StatefulWidget {
