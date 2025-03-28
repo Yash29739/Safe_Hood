@@ -255,6 +255,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       });
                     },
                   ),
+                  SizedBox(height: 10),
                   // Input Fields
                   _buildTextField("Name*", nameController, (value) {
                     if (value == null || value.isEmpty) {

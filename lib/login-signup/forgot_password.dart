@@ -39,18 +39,24 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                 hashedPassword, // Assuming "password" is the field name in Firestore
           });
 
+          // ignore: use_build_context_synchronously
           Utils.showSuccess("Password updated successfully.", context);
           Navigator.pushReplacement(
+            // ignore: use_build_context_synchronously
             context,
             MaterialPageRoute(builder: (context) => LoginScreen()),
           );
         } else {
+          // ignore: use_build_context_synchronously
           Utils.showError("Phone number does not match.", context);
         }
       } else {
+        // ignore: use_build_context_synchronously
         Utils.showError("User does not exist.", context);
       }
-    } catch (e) {}
+    } catch (e) {
+      print(e);
+    }
   }
 
   @override

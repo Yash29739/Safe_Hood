@@ -1,10 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:safe_hood/mainScreens/chat.dart';
 import 'package:safe_hood/mainScreens/users/SafeHoodDashBoard.dart';
 import 'package:safe_hood/mainScreens/Security/security_dashboard.dart';
 import 'package:safe_hood/mainScreens/admins/AdminNearByShops.dart';
 import 'package:safe_hood/mainScreens/admins/dashbroadadmin.dart';
-import 'package:safe_hood/mainScreens/apartmentChat_screen.dart';
 import 'package:safe_hood/mainScreens/nearbyShops_screen.dart';
 import 'package:safe_hood/mainScreens/profile/Profile.dart';
 import 'package:shared_preferences/shared_preferences.dart';

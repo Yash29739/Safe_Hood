@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:safe_hood/mainScreens/admins/ManageComplaints.dart';
 import 'package:safe_hood/mainScreens/admins/ManageResidents.dart';
-import 'package:safe_hood/mainScreens/admins/adminAddNotices.dart';
+import 'package:safe_hood/mainScreens/admins/admin_add_notices.dart';
 import 'package:safe_hood/mainScreens/admins/adminManageStaff.dart';
 import 'package:safe_hood/mainScreens/admins/adminSecurityManagement.dart';
 import 'package:safe_hood/mainScreens/admins/adminmanageevents.dart';
