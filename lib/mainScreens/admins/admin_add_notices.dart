@@ -1,5 +1,7 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:safe_hood/widgets/popup.dart';
 
 class AdminNoticeBoard extends StatefulWidget {
   const AdminNoticeBoard({super.key});
@@ -9,82 +11,167 @@ class AdminNoticeBoard extends StatefulWidget {
 }
 
 class _AdminNoticeBoardState extends State<AdminNoticeBoard> {
-  List<Map<String, dynamic>> notices = [
-    {"title": "Emergency Notice", "desc": "Building maintenance: Water shutdown tomorrow 8AM-2PM", "footer": "Posted by Management • 2 hours ago", "icon": Icons.warning, "color": Colors.red},
-    {"title": "Weekend BBQ", "desc": "Join us for our monthly community BBQ at the courtyard!", "footer": "Saturday, July 15 • 4:00 PM", "icon": Icons.event, "color": Colors.blue},
-    {"title": "Yoga in the Park", "desc": "Free yoga session for all community members", "footer": "Sunday, July 16 • 6:00 AM", "icon": Icons.spa, "color": Colors.green},
-    {"title": "Lost & Found", "desc": "Found: House keys with blue keychain near Building C", "footer": "Posted by John Smith • 3 hours ago", "icon": Icons.search, "color": Colors.black54},
-    {"title": "Parking Notice", "desc": "Please remember to display your parking permit at all times", "footer": "Posted by Security Team • 5 hours ago", "icon": Icons.local_parking, "color": Colors.black54},
-    {"title": "For Sale", "desc": "Gently used patio furniture set - \$200", "footer": "Posted by Maria Garcia • 1 day ago", "icon": Icons.sell, "color": Colors.orange},
-  ];
+  CollectionReference? noticesRef;
+  String? flatCode;
+  String? userId;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFlatCode();
+  }
+
+  Future<void> _loadFlatCode() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      flatCode = prefs.getString('flatCode');
+      userId = prefs.getString('userId');
+    });
+
+    if (flatCode != null) {
+      noticesRef = FirebaseFirestore.instance
+          .collection('flatcode')
+          .doc(flatCode)
+          .collection('notices');
+    }
+  }
 
   void _addNotice() {
     TextEditingController titleController = TextEditingController();
     TextEditingController descController = TextEditingController();
-    
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text("Add Notice"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(controller: titleController, decoration: InputDecoration(labelText: "Title")),
-            TextField(controller: descController, decoration: InputDecoration(labelText: "Description")),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text("Cancel")),
-          ElevatedButton(
-            onPressed: () {
-              if (titleController.text.isNotEmpty && descController.text.isNotEmpty) {
-                setState(() {
-                  notices.add({
-                    "title": titleController.text,
-                    "desc": descController.text,
-                    "footer": "Posted by Admin • Just now",
-                    "icon": Icons.announcement,
-                    "color": Colors.purple,
-                  });
-                });
-                Navigator.pop(context);
-              }
-            },
-            child: Text("Add"),
+      builder:
+          (context) => AlertDialog(
+            title: const Text("Add Notice"),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildTextField("Title", titleController),
+                const SizedBox(height: 8),
+                _buildTextField("Description", descController),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("Cancel"),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  if (titleController.text.isNotEmpty &&
+                      descController.text.isNotEmpty) {
+                    try {
+                      await noticesRef!.add({
+                        "title": titleController.text,
+                        "desc": descController.text,
+                        "footer": "Posted by Admin • Just now",
+                        "icon": "announcement",
+                        "color": "purple",
+                        "timestamp": FieldValue.serverTimestamp(),
+                      });
+
+                      Utils.showSuccess("Notice added successfully!", context);
+                      Navigator.pop(context);
+                    } catch (e) {
+                      Utils.showError("Error adding notice: $e", context);
+                    }
+                  } else {
+                    Utils.showError("Please fill out all fields.", context);
+                  }
+                },
+                child: const Text("Add"),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
-  void _deleteNotice(int index) {
-    setState(() {
-      notices.removeAt(index);
-    });
+  void _deleteNotice(String docId) {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text("Delete Notice"),
+            content: const Text("Are you sure you want to delete this notice?"),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("Cancel"),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  try {
+                    await noticesRef!.doc(docId).delete();
+                    Utils.showSuccess("Notice deleted successfully!", context);
+                    Navigator.pop(context);
+                  } catch (e) {
+                    Utils.showError("Error deleting notice: $e", context);
+                  }
+                },
+                child: const Text("Delete"),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              ),
+            ],
+          ),
+    );
+  }
+
+  Stream<QuerySnapshot> _getNoticesStream() {
+    if (noticesRef == null) {
+      return const Stream.empty();
+    }
+    return noticesRef!.orderBy('timestamp', descending: true).snapshots();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFF2E3FF),
+      backgroundColor: const Color(0xFFF2E3FF),
       appBar: AppBar(
         automaticallyImplyLeading: false,
         toolbarHeight: 100,
-        backgroundColor: Color(0xFFCC00FF),
+        backgroundColor: const Color(0xFFCC00FF),
         title: _buildHeader(),
       ),
       body: Padding(
-        padding: EdgeInsets.all(12),
-        child: ListView.builder(
-          itemCount: notices.length,
-          itemBuilder: (context, index) {
-            return _buildNoticeCard(
-              notices[index]["title"],
-              notices[index]["desc"],
-              notices[index]["footer"],
-              notices[index]["icon"],
-              notices[index]["color"],
-              index,
+        padding: const EdgeInsets.all(12),
+        child: StreamBuilder<QuerySnapshot>(
+          stream: _getNoticesStream(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(
+                child: CircularProgressIndicator(color: Colors.purple),
+              );
+            }
+
+            if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+              return const Center(
+                child: Text(
+                  "No notices available.",
+                  style: TextStyle(fontSize: 16),
+                ),
+              );
+            }
+
+            List<DocumentSnapshot> notices = snapshot.data!.docs;
+
+            return ListView.builder(
+              itemCount: notices.length,
+              itemBuilder: (context, index) {
+                Map<String, dynamic> data =
+                    notices[index].data() as Map<String, dynamic>;
+
+                return _buildNoticeCard(
+                  data["title"],
+                  data["desc"],
+                  data["footer"] ?? "",
+                  _getIconFromString(data["icon"] ?? "announcement"),
+                  _getColorFromString(data["color"] ?? "purple"),
+                  notices[index].id,
+                );
+              },
             );
           },
         ),
@@ -92,29 +179,59 @@ class _AdminNoticeBoardState extends State<AdminNoticeBoard> {
       floatingActionButton: FloatingActionButton(
         onPressed: _addNotice,
         backgroundColor: Colors.deepPurple,
-        child: Icon(Icons.add),
+        child: const Icon(Icons.add),
       ),
     );
   }
 
-  Widget _buildNoticeCard(String title, String desc, String footer, IconData icon, Color color, int index) {
+  Widget _buildNoticeCard(
+    String title,
+    String desc,
+    String footer,
+    IconData icon,
+    Color color,
+    String docId,
+  ) {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ListTile(
         leading: Icon(icon, color: color),
-        title: Text(title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color)),
+        title: Text(
+          title,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(desc, style: TextStyle(fontSize: 14, color: Colors.black87)),
-            SizedBox(height: 4),
-            Text(footer, style: TextStyle(fontSize: 12, color: Colors.black54)),
+            Text(
+              desc,
+              style: const TextStyle(fontSize: 14, color: Colors.black87),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              footer,
+              style: const TextStyle(fontSize: 12, color: Colors.black54),
+            ),
           ],
         ),
         trailing: IconButton(
-          icon: Icon(Icons.delete, color: Colors.red),
-          onPressed: () => _deleteNotice(index),
+          icon: const Icon(Icons.delete, color: Colors.red),
+          onPressed: () => _deleteNotice(docId),
         ),
+      ),
+    );
+  }
+
+  Widget _buildTextField(String label, TextEditingController controller) {
+    return TextField(
+      controller: controller,
+      decoration: InputDecoration(
+        labelText: label,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
       ),
     );
   }
@@ -132,8 +249,8 @@ class _AdminNoticeBoardState extends State<AdminNoticeBoard> {
             child: Image.asset("assets/logo.jpg", height: 60),
           ),
         ),
-        SizedBox(width: 10),
-        Text(
+        const SizedBox(width: 10),
+        const Text(
           "ADMIN BOARD",
           style: TextStyle(
             fontSize: 30,
@@ -144,5 +261,43 @@ class _AdminNoticeBoardState extends State<AdminNoticeBoard> {
         ),
       ],
     );
+  }
+
+  IconData _getIconFromString(String iconName) {
+    switch (iconName) {
+      case "warning":
+        return Icons.warning;
+      case "event":
+        return Icons.event;
+      case "spa":
+        return Icons.spa;
+      case "search":
+        return Icons.search;
+      case "local_parking":
+        return Icons.local_parking;
+      case "sell":
+        return Icons.sell;
+      default:
+        return Icons.announcement;
+    }
+  }
+
+  Color _getColorFromString(String colorName) {
+    switch (colorName) {
+      case "red":
+        return Colors.red;
+      case "blue":
+        return Colors.blue;
+      case "green":
+        return Colors.green;
+      case "orange":
+        return Colors.orange;
+      case "black54":
+        return Colors.black54;
+      case "purple":
+        return Colors.purple;
+      default:
+        return Colors.purple;
+    }
   }
 }

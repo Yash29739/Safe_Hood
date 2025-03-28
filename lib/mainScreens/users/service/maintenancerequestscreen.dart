@@ -16,6 +16,7 @@ class _MaintenanceRequestsScreenState extends State<MaintenanceRequestsScreen> {
   String _selectedPriority = "High";
   String _selectedCategory = "Plumbing";
   String? _flatCode;
+  String? _doorNumber;
 
   final List<String> _priorities = ["High", "Medium", "Low"];
   final List<String> _categories = [
@@ -41,6 +42,7 @@ class _MaintenanceRequestsScreenState extends State<MaintenanceRequestsScreen> {
     try {
       SharedPreferences prefs = await SharedPreferences.getInstance();
       String? userId = prefs.getString("userId");
+      _doorNumber = prefs.getString("doorNumber");
 
       if (userId == null) {
         Utils.showError(
@@ -76,22 +78,19 @@ class _MaintenanceRequestsScreenState extends State<MaintenanceRequestsScreen> {
       return;
     }
 
-    if (_flatCode == null) {
-      Utils.showError("Error: Flat code not found.", context);
+    if (_flatCode == null || _doorNumber == null) {
+      Utils.showError("Error: Flat code or door number not found.", context);
       return;
     }
 
     try {
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      String? doorNumber = prefs.getString("doorNumber");
-
-      // ✅ Add maintenance request to Firestore
+      // ✅ Add maintenance request with auto-generated document ID
       await FirebaseFirestore.instance
           .collection('flatcode')
           .doc(_flatCode)
           .collection('maintenance_requests')
           .add({
-            "doorNumber": doorNumber,
+            "doorNumber": _doorNumber,
             "description": _issueController.text,
             "priority": _selectedPriority,
             "category": _selectedCategory,
