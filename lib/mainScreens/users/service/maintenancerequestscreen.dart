@@ -38,11 +38,12 @@ class _MaintenanceRequestsScreenState extends State<MaintenanceRequestsScreen> {
     super.dispose();
   }
 
+  // ✅ Fetch flatCode and doorNumber using userId
   Future<void> _fetchUserData() async {
     try {
       SharedPreferences prefs = await SharedPreferences.getInstance();
       String? userId = prefs.getString("userId");
-      _doorNumber = prefs.getString("doorNumber");
+      // _doorNumber = prefs.getString("doorNumber");
 
       if (userId == null) {
         Utils.showError(
@@ -63,15 +64,17 @@ class _MaintenanceRequestsScreenState extends State<MaintenanceRequestsScreen> {
         return;
       }
 
-      // Get flatCode and store it in state
+      // ✅ Store flatCode and doorNumber
       setState(() {
         _flatCode = userDoc["flatCode"];
+        _doorNumber = userDoc["doorNumber"]; // ✅ Fetch doorNumber
       });
     } catch (e) {
       Utils.showError("Error fetching user data: $e", context);
     }
   }
 
+  // ✅ Submit maintenance request
   Future<void> _submitMaintenanceRequest() async {
     if (_issueController.text.isEmpty) {
       Utils.showError("Please enter a valid issue description.", context);
@@ -84,7 +87,7 @@ class _MaintenanceRequestsScreenState extends State<MaintenanceRequestsScreen> {
     }
 
     try {
-      // ✅ Add maintenance request with auto-generated document ID
+      // ✅ Add maintenance request with doorNumber
       await FirebaseFirestore.instance
           .collection('flatcode')
           .doc(_flatCode)
@@ -111,15 +114,16 @@ class _MaintenanceRequestsScreenState extends State<MaintenanceRequestsScreen> {
     }
   }
 
+  // ✅ Get requests matching doorNumber
   Stream<QuerySnapshot> _getMaintenanceRequestsStream() {
-    if (_flatCode == null) {
+    if (_flatCode == null || _doorNumber == null) {
       return const Stream.empty();
     }
     return FirebaseFirestore.instance
         .collection('flatcode')
         .doc(_flatCode)
         .collection('maintenance_requests')
-        .orderBy('date', descending: true)
+        .where('doorNumber', isEqualTo: _doorNumber)
         .snapshots();
   }
 
@@ -153,6 +157,7 @@ class _MaintenanceRequestsScreenState extends State<MaintenanceRequestsScreen> {
     );
   }
 
+  // ✅ Show maintenance requests
   Widget _buildRequestsList() {
     return StreamBuilder<QuerySnapshot>(
       stream: _getMaintenanceRequestsStream(),
@@ -204,6 +209,7 @@ class _MaintenanceRequestsScreenState extends State<MaintenanceRequestsScreen> {
     );
   }
 
+  // ✅ New request submission card
   Widget _buildNewRequestCard() {
     return Card(
       elevation: 2,
@@ -270,6 +276,7 @@ class _MaintenanceRequestsScreenState extends State<MaintenanceRequestsScreen> {
     );
   }
 
+  // ✅ Build dropdown
   Widget _buildDropdown(
     List<String> items,
     String value,
@@ -295,6 +302,7 @@ class _MaintenanceRequestsScreenState extends State<MaintenanceRequestsScreen> {
     );
   }
 
+  // ✅ Section title
   Widget _buildSectionTitle(String title) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -305,6 +313,7 @@ class _MaintenanceRequestsScreenState extends State<MaintenanceRequestsScreen> {
     );
   }
 
+  // ✅ Request card UI
   Widget _buildRequestCard(
     String title,
     String desc,
@@ -357,6 +366,7 @@ class _MaintenanceRequestsScreenState extends State<MaintenanceRequestsScreen> {
     );
   }
 
+  // ✅ Card header with priority
   Widget _buildCardHeader(String title, String priority, Color labelColor) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -381,6 +391,7 @@ class _MaintenanceRequestsScreenState extends State<MaintenanceRequestsScreen> {
     );
   }
 
+  // ✅ Header with logo and title
   Widget _buildHeader() {
     return Row(
       children: [

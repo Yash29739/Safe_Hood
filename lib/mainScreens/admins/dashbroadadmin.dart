@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:safe_hood/mainScreens/admins/ManageComplaints.dart';
-import 'package:safe_hood/mainScreens/admins/ManageResidents.dart';
+import 'package:safe_hood/mainScreens/admins/adminMaintenance.dart';
 import 'package:safe_hood/mainScreens/admins/admin_add_notices.dart';
 import 'package:safe_hood/mainScreens/admins/adminManageStaff.dart';
-import 'package:safe_hood/mainScreens/admins/adminSecurityManagement.dart';
 import 'package:safe_hood/mainScreens/admins/adminmanageevents.dart';
 import 'package:safe_hood/mainScreens/admins/adminrulesand%20regulation.dart';
 import 'package:safe_hood/mainScreens/admins/adminvisitors.dart';
-
-
 
 class AdminDashboard extends StatelessWidget {
   const AdminDashboard({super.key});
@@ -23,14 +20,49 @@ class AdminDashboard extends StatelessWidget {
           crossAxisSpacing: 10,
           mainAxisSpacing: 10,
           children: [
-            _buildGridItem(context, "Manage Complaints", Icons.report, const ManageComplaintsScreen()),
-            _buildGridItem(context, "Add Notices", Icons.announcement,  AdminNoticeBoard()),
-            _buildGridItem(context, "Manage Events", Icons.event, const AdminEventsScreen()),
-            _buildGridItem(context, "Visitor Logs", Icons.group, const VisitorLogScreen()),
-            _buildGridItem(context, "Manage Staff", Icons.people,  AdminStaffManagementPage()),
-            _buildGridItem(context, "Manage Residents", Icons.person, const AdminNeighborManagementScreen ()),
-            _buildGridItem(context, "Security Management", Icons.security, const SecurityManagementScreen()),
-            _buildGridItem(context, "ruless", Icons.message, const AdminRulesPage()),
+            _buildGridItem(
+              context,
+              "Manage Complaints",
+              Icons.report,
+              ManageComplaintsScreen(),
+            ),
+            _buildGridItem(
+              context,
+              "Add Notices",
+              Icons.announcement,
+              AdminNoticeBoard(),
+            ),
+
+            _buildGridItem(
+              context,
+              "Maintenance Issues",
+              Icons.toll_outlined,
+              const AdminMaintenance(),
+            ),
+            _buildGridItem(
+              context,
+              "Manage Events",
+              Icons.event,
+              const AdminEventsScreen(),
+            ),
+            _buildGridItem(
+              context,
+              "Visitor Logs",
+              Icons.group,
+              const VisitorLogScreen(),
+            ),
+            _buildGridItem(
+              context,
+              "Manage Staff",
+              Icons.people,
+              AdminStaffManagementPage(),
+            ),
+            _buildGridItem(
+              context,
+              "ruless",
+              Icons.message,
+              const AdminRulesPage(),
+            ),
           ],
         ),
       ),
@@ -92,11 +124,6 @@ class ManageVisitorsScreen extends StatelessWidget {
     return _buildScreen(context, "Visitor Logs");
   }
 }
-
-
-
-
-
 
 class BroadcastMessagesScreen extends StatelessWidget {
   const BroadcastMessagesScreen({super.key});

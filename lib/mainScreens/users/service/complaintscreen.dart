@@ -27,6 +27,7 @@ class _ComplaintScreenState extends State<ComplaintScreen> {
   String? flatCode; // Stores flat code from Firestore
   String? doorNumber; // Stores door number from Firestore
   String? userName; // Stores user name from Firestore
+  String? editingDocId; // Stores the ID of the complaint being edited
 
   @override
   void initState() {
@@ -34,7 +35,7 @@ class _ComplaintScreenState extends State<ComplaintScreen> {
     _loadUserDetails(); // Load user details when screen loads
   }
 
-  // Load User Data (flatCode, doorNumber, userName) from Firestore
+  // ✅ Load User Data (flatCode, doorNumber, userName) from Firestore
   Future<void> _loadUserDetails() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? userId = prefs.getString("userId");
@@ -59,79 +60,114 @@ class _ComplaintScreenState extends State<ComplaintScreen> {
     }
   }
 
-  // Submit or Update Complaint to Firestore using doorNumber as Document ID
+  // ✅ Submit or Update Complaint to Firestore using unique docId
   Future<void> _submitComplaint() async {
     if (_subjectController.text.isEmpty ||
         _descriptionController.text.isEmpty ||
-        doorNumber == null ||
         flatCode == null ||
+        doorNumber == null ||
         userName == null) {
       _showError("Please fill all fields before submitting.");
       return;
     }
 
     try {
-      // Use doorNumber as the document ID
-      await FirebaseFirestore.instance
-          .collection('flatcode')
-          .doc(flatCode)
-          .collection('complaints')
-          .doc(doorNumber) // Use doorNumber as document ID
-          .set({
-            'subject': _subjectController.text,
-            'description': _descriptionController.text,
-            'category': selectedCategory,
-            'doorNumber': doorNumber,
-            'name': userName,
-            'status': 'Pending',
-            'timestamp': FieldValue.serverTimestamp(),
-          });
+      // 🔄 If editing, update the existing document
+      if (editingDocId != null) {
+        await FirebaseFirestore.instance
+            .collection('flatcode')
+            .doc(flatCode)
+            .collection('complaints')
+            .doc(editingDocId)
+            .update({
+              'subject': _subjectController.text,
+              'description': _descriptionController.text,
+              'category': selectedCategory,
+              'doorNumber': doorNumber,
+              'name': userName,
+              'status': 'Pending',
+              'timestamp': FieldValue.serverTimestamp(),
+            });
 
-      _showSuccess("Complaint submitted/updated successfully!");
+        _showSuccess("Complaint updated successfully!");
+      } else {
+        // ✅ Generate unique docId if new complaint
+        String complaintId =
+            FirebaseFirestore.instance
+                .collection('flatcode')
+                .doc(flatCode)
+                .collection('complaints')
+                .doc()
+                .id;
+
+        await FirebaseFirestore.instance
+            .collection('flatcode')
+            .doc(flatCode)
+            .collection('complaints')
+            .doc(complaintId) // ✅ Use unique complaintId as document ID
+            .set({
+              'subject': _subjectController.text,
+              'description': _descriptionController.text,
+              'category': selectedCategory,
+              'doorNumber': doorNumber,
+              'name': userName,
+              'status': 'Pending',
+              'timestamp': FieldValue.serverTimestamp(),
+            });
+
+        _showSuccess("Complaint submitted successfully!");
+      }
+
       _clearForm(); // Clear form after submission
     } catch (e) {
       _showError("Failed to submit complaint. Please try again.");
     }
   }
 
-  // Clear form after submission
+  // ✅ Clear form after submission
   void _clearForm() {
     _subjectController.clear();
     _descriptionController.clear();
     setState(() {
       selectedCategory = "Noise";
+      editingDocId = null;
     });
   }
 
-  // Delete Complaint using doorNumber as Document ID
-  Future<void> _deleteComplaint(String doorNumber) async {
-    await FirebaseFirestore.instance
-        .collection('flatcode')
-        .doc(flatCode)
-        .collection('complaints')
-        .doc(doorNumber)
-        .delete();
+  // ✅ Delete Complaint using unique complaintId
+  Future<void> _deleteComplaint(String docId) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('flatcode')
+          .doc(flatCode)
+          .collection('complaints')
+          .doc(docId)
+          .delete();
 
-    _showSuccess("Complaint deleted successfully!");
+      _showSuccess("Complaint deleted successfully!");
+    } catch (e) {
+      _showError("Failed to delete complaint.");
+    }
   }
 
-  // Load complaint data for editing
-  void _editComplaint(Map<String, dynamic> data) {
+  // ✅ Load complaint data for editing
+  void _editComplaint(String docId, Map<String, dynamic> data) {
     setState(() {
       _subjectController.text = data['subject'];
       _descriptionController.text = data['description'];
       selectedCategory = data['category'];
+      editingDocId = docId; // Store complaint ID to update later
     });
   }
 
-  // Show success message
+  // ✅ Show success message
   void _showSuccess(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message), backgroundColor: Colors.green),
     );
   }
 
-  // Show error message
+  // ✅ Show error message
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message), backgroundColor: Colors.red),
@@ -169,7 +205,7 @@ class _ComplaintScreenState extends State<ComplaintScreen> {
     );
   }
 
-  // Complaint Form Widget
+  // ✅ Complaint Form Widget
   Widget _buildComplaintForm() {
     return Card(
       elevation: 5,
@@ -227,9 +263,9 @@ class _ComplaintScreenState extends State<ComplaintScreen> {
                   ),
                   elevation: 3,
                 ),
-                child: const Text(
-                  "Submit / Update",
-                  style: TextStyle(fontSize: 18),
+                child: Text(
+                  editingDocId == null ? "Submit" : "Update",
+                  style: const TextStyle(fontSize: 18),
                 ),
               ),
             ),
@@ -239,7 +275,7 @@ class _ComplaintScreenState extends State<ComplaintScreen> {
     );
   }
 
-  // Display Complaints List
+  // ✅ Display Complaints List
   Widget _buildComplaintList() {
     return StreamBuilder<QuerySnapshot>(
       stream:
@@ -266,7 +302,7 @@ class _ComplaintScreenState extends State<ComplaintScreen> {
           itemCount: docs.length,
           itemBuilder: (context, index) {
             var data = docs[index].data() as Map<String, dynamic>;
-            String doorNumber = docs[index].id;
+            String docId = docs[index].id;
 
             return Card(
               margin: const EdgeInsets.symmetric(vertical: 8),
@@ -291,13 +327,13 @@ class _ComplaintScreenState extends State<ComplaintScreen> {
                     IconButton(
                       icon: const Icon(Icons.edit, color: Colors.blue),
                       onPressed: () {
-                        _editComplaint(data);
+                        _editComplaint(docId, data);
                       },
                     ),
                     IconButton(
                       icon: const Icon(Icons.delete, color: Colors.red),
                       onPressed: () {
-                        _deleteComplaint(doorNumber);
+                        _deleteComplaint(docId);
                       },
                     ),
                   ],
@@ -310,7 +346,7 @@ class _ComplaintScreenState extends State<ComplaintScreen> {
     );
   }
 
-  // Text Field Widget
+  // ✅ Text Field Widget
   Widget _buildTextField(
     String label,
     TextEditingController controller, {
