@@ -74,7 +74,6 @@ class _NearByShopsState extends State<NearByShops> {
     if (flatCode == null) return;
 
     if (shopId == null) {
-      // ✅ Add new shop
       DocumentReference shopRef = await FirebaseFirestore.instance
           .collection('flatcode')
           .doc(flatCode)
@@ -86,10 +85,8 @@ class _NearByShopsState extends State<NearByShops> {
             "mapLink": mapLink,
           });
 
-      // ✅ Add shopId to the document
       await shopRef.update({"shopId": shopRef.id});
     } else {
-      // ✅ Update existing shop
       await FirebaseFirestore.instance
           .collection('flatcode')
           .doc(flatCode)
@@ -120,7 +117,6 @@ class _NearByShopsState extends State<NearByShops> {
     _fetchShops(); // Refresh list after deleting
   }
 
-  // ✅ Filter shops based on search query
   void _filterShops(String query) {
     setState(() {
       filteredShops =
@@ -134,7 +130,6 @@ class _NearByShopsState extends State<NearByShops> {
     });
   }
 
-  // ✅ Open Google Maps using the provided link
   Future<void> _openMapLink(String mapLink) async {
     final Uri mapUrl = Uri.parse(mapLink);
 
@@ -145,7 +140,6 @@ class _NearByShopsState extends State<NearByShops> {
     }
   }
 
-  // ✅ Show dialog to add or edit a shop
   void _showAddOrEditShopDialog({
     String? shopId,
     String? initialName,
@@ -217,7 +211,6 @@ class _NearByShopsState extends State<NearByShops> {
     );
   }
 
-  // ✅ Build a reusable text field
   Widget _buildTextField(
     String label,
     String? initialValue,
@@ -236,7 +229,6 @@ class _NearByShopsState extends State<NearByShops> {
     );
   }
 
-  // ✅ Build shop list UI
   Widget _buildShopList() {
     if (filteredShops.isEmpty) {
       return const Center(
@@ -305,7 +297,6 @@ class _NearByShopsState extends State<NearByShops> {
                   ],
                 ),
                 const SizedBox(height: 5),
-                // ✅ Show edit and delete buttons only for admin
                 if (userRole == "Admin")
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
@@ -378,15 +369,11 @@ class _NearByShopsState extends State<NearByShops> {
           Expanded(child: _buildShopList()),
         ],
       ),
-      // ✅ Floating Action Button to add new shop (only for admin)
-      floatingActionButton:
-          userRole == "Admin"
-              ? FloatingActionButton(
-                onPressed: () => _showAddOrEditShopDialog(),
-                backgroundColor: const Color(0xFF77008B),
-                child: const Icon(Icons.add, color: Colors.white),
-              )
-              : null,
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _showAddOrEditShopDialog(),
+        backgroundColor: const Color(0xFF77008B),
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
     );
   }
 }

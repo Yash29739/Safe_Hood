@@ -6,6 +6,7 @@ import 'package:safe_hood/mainScreens/admins/adminManageStaff.dart';
 import 'package:safe_hood/mainScreens/admins/adminmanageevents.dart';
 import 'package:safe_hood/mainScreens/admins/adminrulesand%20regulation.dart';
 import 'package:safe_hood/mainScreens/admins/adminvisitors.dart';
+import 'package:safe_hood/mainScreens/users/community/visitorenteryscreen.dart';
 
 class AdminDashboard extends StatelessWidget {
   const AdminDashboard({super.key});
@@ -49,7 +50,7 @@ class AdminDashboard extends StatelessWidget {
               context,
               "Visitor Logs",
               Icons.group,
-              const VisitorLogScreen(),
+              const VisitorEntryScreen(),
             ),
             _buildGridItem(
               context,
