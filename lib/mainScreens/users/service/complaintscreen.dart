@@ -22,7 +22,6 @@ class _ComplaintScreenState extends State<ComplaintScreen> {
 
   final TextEditingController _subjectController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
-  final TextEditingController _nameController = TextEditingController();
 
   String? flatCode; // Stores flat code from Firestore
   String? doorNumber; // Stores door number from Firestore
@@ -179,12 +178,10 @@ class _ComplaintScreenState extends State<ComplaintScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF2E3FF),
       appBar: AppBar(
-        automaticallyImplyLeading: true,
+        automaticallyImplyLeading: false,
+        toolbarHeight: 100,
         backgroundColor: const Color(0xFFCC00FF),
-        title: const Text(
-          "Complaint Section",
-          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-        ),
+        title: _buildHeader(),
       ),
       body:
           flatCode == null || doorNumber == null
@@ -361,6 +358,34 @@ class _ComplaintScreenState extends State<ComplaintScreen> {
         fillColor: Colors.grey[200],
         filled: true,
       ),
+    );
+  }
+  Widget _buildHeader() {
+    return Row(
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.white, width: 3),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(50),
+            child: Image.asset("assets/logo.jpg", height: 60),
+          ),
+        ),
+        // Add your logo here
+        const SizedBox(width: 10),
+        const Text(
+          "SAFE HOOD",
+          style: TextStyle(
+            fontSize: 40,
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontFamily: "Merriweather",
+          ),
+        ),
+        SizedBox(height: 30),
+      ],
     );
   }
 }
