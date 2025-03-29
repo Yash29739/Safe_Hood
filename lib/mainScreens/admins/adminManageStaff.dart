@@ -5,7 +5,8 @@ class AdminStaffManagementPage extends StatefulWidget {
   const AdminStaffManagementPage({super.key});
 
   @override
-  _AdminStaffManagementPageState createState() => _AdminStaffManagementPageState();
+  _AdminStaffManagementPageState createState() =>
+      _AdminStaffManagementPageState();
 }
 
 class _AdminStaffManagementPageState extends State<AdminStaffManagementPage> {
@@ -29,7 +30,6 @@ class _AdminStaffManagementPageState extends State<AdminStaffManagementPage> {
           .map((doc) => {...doc.data() as Map<String, dynamic>, 'id': doc.id})
           .toList();
     }
-
     setState(() {
       staffMembers = tempStaffMembers;
     });
@@ -193,6 +193,7 @@ class _AdminStaffManagementPageState extends State<AdminStaffManagementPage> {
           backgroundColor: Colors.grey,
           child: Icon(Icons.person, color: Colors.white),
         ),
+
         title: Text(member['name'], style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         subtitle: Text(member['position'], style: TextStyle(fontSize: 14, color: Colors.black87)),
         trailing: IconButton(

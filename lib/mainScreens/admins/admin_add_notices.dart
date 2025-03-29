@@ -110,8 +110,8 @@ class _AdminNoticeBoardState extends State<AdminNoticeBoard> {
                     Utils.showError("Error deleting notice: $e", context);
                   }
                 },
-                child: const Text("Delete"),
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                child: const Text("Delete"),
               ),
             ],
           ),

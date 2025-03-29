@@ -18,6 +18,7 @@ class _ApartmentChatScreenState extends State<ApartmentChatScreen> {
   late ScrollController _scrollController;
   bool _showScrollButton = false;
 
+  @override
   void initState() {
     super.initState();
     _scrollController = ScrollController()..addListener(_checkIfScrolled);

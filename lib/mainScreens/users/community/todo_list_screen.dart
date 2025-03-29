@@ -19,7 +19,9 @@ class _ToDoListScreenState extends State<ToDoListScreen> {
   DateTime? _selectedDate;
   TimeOfDay? _selectedTime;
   String? _userId;
-  final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+
+  final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin =
+      FlutterLocalNotificationsPlugin();
 
   @override
   void initState() {
@@ -28,6 +30,7 @@ class _ToDoListScreenState extends State<ToDoListScreen> {
     _initializeNotifications();
   }
 
+  // Load User ID from SharedPreferences
   Future<void> _loadUserId() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
@@ -35,14 +38,23 @@ class _ToDoListScreenState extends State<ToDoListScreen> {
     });
   }
 
+  // Initialize Notifications
   Future<void> _initializeNotifications() async {
-    const AndroidInitializationSettings androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
-    const InitializationSettings settings = InitializationSettings(android: androidSettings);
+    const AndroidInitializationSettings androidSettings =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+    const InitializationSettings settings = InitializationSettings(
+      android: androidSettings,
+    );
     await _flutterLocalNotificationsPlugin.initialize(settings);
     tz.initializeTimeZones();
   }
 
-  Future<void> _scheduleNotification(String taskId, String taskName, DateTime scheduledTime) async {
+  // Schedule Task Notification
+  Future<void> _scheduleNotification(
+    String taskId,
+    String taskName,
+    DateTime scheduledTime,
+  ) async {
     await _flutterLocalNotificationsPlugin.zonedSchedule(
       taskId.hashCode,
       "Task Reminder",
@@ -62,25 +74,44 @@ class _ToDoListScreenState extends State<ToDoListScreen> {
     );
   }
 
+  // Add Task to Firestore
   void _addTask() async {
-    if (_userId == null || _taskNameController.text.isEmpty || _selectedDate == null || _selectedTime == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Please fill in all fields!")));
+    if (_userId == null ||
+        _taskNameController.text.isEmpty ||
+        _selectedDate == null ||
+        _selectedTime == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please fill in all fields!")),
+      );
       return;
     }
 
     DateTime scheduledTime = DateTime(
-      _selectedDate!.year, _selectedDate!.month, _selectedDate!.day, _selectedTime!.hour, _selectedTime!.minute,
+      _selectedDate!.year,
+      _selectedDate!.month,
+      _selectedDate!.day,
+      _selectedTime!.hour,
+      _selectedTime!.minute,
     );
 
-    DocumentReference docRef = await FirebaseFirestore.instance.collection('users').doc(_userId).collection('tasks').add({
-      'name': _taskNameController.text,
-      'description': _taskDescController.text,
-      'scheduledTime': scheduledTime.toIso8601String(),
-      'completed': false,
-      'createdAt': FieldValue.serverTimestamp(),
-    });
+    DocumentReference docRef = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(_userId)
+        .collection('tasks')
+        .add({
+          'name': _taskNameController.text,
+          'description': _taskDescController.text,
+          'scheduledTime': scheduledTime.toIso8601String(),
+          'completed': false,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
 
     _scheduleNotification(docRef.id, _taskNameController.text, scheduledTime);
+    _clearForm();
+  }
+
+  // Clear Form After Adding Task
+  void _clearForm() {
     _taskNameController.clear();
     _taskDescController.clear();
     setState(() {
@@ -89,34 +120,115 @@ class _ToDoListScreenState extends State<ToDoListScreen> {
     });
   }
 
+  // Delete Task
+  void _deleteTask(String taskId) {
+    FirebaseFirestore.instance
+        .collection('users')
+        .doc(_userId)
+        .collection('tasks')
+        .doc(taskId)
+        .delete()
+        .then((_) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Task deleted successfully!"),
+              backgroundColor: Colors.red,
+            ),
+          );
+        });
+  }
+
+  // Build Task List
   Widget _buildTaskList() {
+    if (_userId == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
     return StreamBuilder(
-      stream: FirebaseFirestore.instance.collection('users').doc(_userId).collection('tasks').orderBy('scheduledTime').snapshots(),
+      stream:
+          FirebaseFirestore.instance
+              .collection('users')
+              .doc(_userId)
+              .collection('tasks')
+              .orderBy('scheduledTime')
+              .snapshots(),
       builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return const Center(child: Text("No tasks available"));
+          return const Center(
+            child: Text(
+              "No tasks available",
+              style: TextStyle(color: Colors.grey),
+            ),
+          );
         }
-        return GridView.builder(
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, crossAxisSpacing: 10, mainAxisSpacing: 10),
+
+        return ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
           itemCount: snapshot.data!.docs.length,
           itemBuilder: (context, index) {
             var doc = snapshot.data!.docs[index];
             DateTime taskTime = DateTime.parse(doc['scheduledTime']);
-            String formattedTime = DateFormat('MMM dd, yyyy - hh:mm a').format(taskTime);
+            String formattedTime = DateFormat(
+              'MMM dd, yyyy - hh:mm a',
+            ).format(taskTime);
+
             return Card(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              margin: const EdgeInsets.symmetric(vertical: 8),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
               elevation: 5,
-              color: Colors.purple.shade100,
-              child: ListTile(
-                title: Text(doc['name'], style: const TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: Text("${doc['description']}\nDue: $formattedTime"),
-                trailing: Checkbox(
-                  value: doc['completed'],
-                  onChanged: (bool? value) {
-                    FirebaseFirestore.instance.collection('users').doc(_userId).collection('tasks').doc(doc.id).update({'completed': value});
-                  },
+              color: Colors.purple.shade50,
+              child: Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            doc['name'],
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                            ),
+                          ),
+                          const SizedBox(height: 5),
+                          Text(
+                            doc['description'],
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                          const SizedBox(height: 5),
+                          Text(
+                            "Due: $formattedTime",
+                            style: const TextStyle(color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Column(
+                      children: [
+                        Checkbox(
+                          value: doc['completed'],
+                          onChanged: (bool? value) {
+                            FirebaseFirestore.instance
+                                .collection('users')
+                                .doc(_userId)
+                                .collection('tasks')
+                                .doc(doc.id)
+                                .update({'completed': value});
+                          },
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                          onPressed: () => _deleteTask(doc.id),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-                onLongPress: () => FirebaseFirestore.instance.collection('users').doc(_userId).collection('tasks').doc(doc.id).delete(),
               ),
             );
           },
@@ -128,39 +240,135 @@ class _ToDoListScreenState extends State<ToDoListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("To-Do List"), backgroundColor: Colors.purple, centerTitle: true),
+      appBar: AppBar(
+        title: const Text("To-Do List"),
+        backgroundColor: Colors.purple,
+        centerTitle: true,
+      ),
       body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              _buildTaskForm(),
+              const SizedBox(height: 20),
+              _buildTaskList(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Task Form
+  Widget _buildTaskForm() {
+    return Card(
+      elevation: 5,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            TextField(controller: _taskNameController, decoration: const InputDecoration(labelText: "Task Name")),
-            TextField(controller: _taskDescController, decoration: const InputDecoration(labelText: "Task Description")),
+            _buildTextField("Task Name", _taskNameController),
+            const SizedBox(height: 10),
+            _buildTextField(
+              "Task Description",
+              _taskDescController,
+              maxLines: 3,
+            ),
+            const SizedBox(height: 20),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.purple, foregroundColor: Colors.white),
-                  onPressed: () async {
-                    DateTime? pickedDate = await showDatePicker(context: context, initialDate: DateTime.now(), firstDate: DateTime.now(), lastDate: DateTime(2101));
-                    if (pickedDate != null) setState(() => _selectedDate = pickedDate);
-                  },
-                  child: Text(_selectedDate == null ? "Pick Date" : DateFormat('MMM dd, yyyy').format(_selectedDate!)),
-                ),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.purple, foregroundColor: Colors.white),
-                  onPressed: () async {
-                    TimeOfDay? pickedTime = await showTimePicker(context: context, initialTime: TimeOfDay.now());
-                    if (pickedTime != null) setState(() => _selectedTime = pickedTime);
-                  },
-                  child: Text(_selectedTime == null ? "Pick Time" : _selectedTime!.format(context)),
-                ),
-              ],
+              children: [_buildDatePickerButton(), _buildTimePickerButton()],
             ),
-            ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: Colors.purple, foregroundColor: Colors.white), onPressed: _addTask, child: const Text("Add Task")),
-            const SizedBox(height: 10),
-            Expanded(child: _buildTaskList()),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _addTask,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.purple,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 15),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: const Text("Add Task", style: TextStyle(fontSize: 18)),
+              ),
+            ),
           ],
         ),
+      ),
+    );
+  }
+
+  // Date Picker Button
+  Widget _buildDatePickerButton() {
+    return ElevatedButton(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.purple,
+        foregroundColor: Colors.white,
+      ),
+      onPressed: () async {
+        DateTime? pickedDate = await showDatePicker(
+          context: context,
+          initialDate: DateTime.now(),
+          firstDate: DateTime.now(),
+          lastDate: DateTime(2101),
+        );
+        if (pickedDate != null) {
+          setState(() {
+            _selectedDate = pickedDate;
+          });
+        }
+      },
+      child: Text(
+        _selectedDate == null
+            ? "Pick Date"
+            : DateFormat('MMM dd, yyyy').format(_selectedDate!),
+      ),
+    );
+  }
+
+  // Time Picker Button
+  Widget _buildTimePickerButton() {
+    return ElevatedButton(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.purple,
+        foregroundColor: Colors.white,
+      ),
+      onPressed: () async {
+        TimeOfDay? pickedTime = await showTimePicker(
+          context: context,
+          initialTime: TimeOfDay.now(),
+        );
+        if (pickedTime != null) {
+          setState(() {
+            _selectedTime = pickedTime;
+          });
+        }
+      },
+      child: Text(
+        _selectedTime == null ? "Pick Time" : _selectedTime!.format(context),
+      ),
+    );
+  }
+
+  // Text Field Widget
+  Widget _buildTextField(
+    String label,
+    TextEditingController controller, {
+    int maxLines = 1,
+  }) {
+    return TextField(
+      controller: controller,
+      maxLines: maxLines,
+      decoration: InputDecoration(
+        labelText: label,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+        fillColor: Colors.grey[200],
+        filled: true,
       ),
     );
   }
