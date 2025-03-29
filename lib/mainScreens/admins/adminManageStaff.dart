@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 class AdminStaffManagementPage extends StatefulWidget {
@@ -9,66 +10,127 @@ class AdminStaffManagementPage extends StatefulWidget {
 }
 
 class _AdminStaffManagementPageState extends State<AdminStaffManagementPage> {
-  List<Map<String, dynamic>> securityTeam = [
-    {
-      "name": "John Martinez",
-      "position": "Head of Security",
-      "details": "Available 24/7",
-      "color": Colors.blue,
-    },
-    {
-      "name": "Sarah Wilson",
-      "position": "Night Shift Supervisor",
-      "details": "8:00 PM - 5:00 AM",
-      "color": Colors.blue,
-    },
-  ];
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final String staffPath = "flatcode/(flatcode)/staff";
+  Map<String, List<Map<String, dynamic>>> staffMembers = {};
 
-  List<Map<String, dynamic>> maintenanceTeam = [
-    {
-      "name": "Robert Chen",
-      "position": "Lead Maintenance Engineer",
-      "details": "Mon-Fri: 8:00 AM - 5:00 PM",
-      "color": Colors.teal,
-    },
-    {
-      "name": "Mike Thompson",
-      "position": "General Maintenance",
-      "details": "Mon-Fri: 8:00 AM - 5:00 PM",
-      "color": Colors.teal,
-    },
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _fetchAllTeams();
+  }
 
-  List<Map<String, dynamic>> adminStaff = [
-    {
-      "name": "Emily Parker",
-      "position": "Community Manager",
-      "details": "emily.parker@safehood.com",
-      "color": Colors.orange,
-    },
-    {
-      "name": "David Kim",
-      "position": "Resident Services Coordinator",
-      "details": "david.kim@safehood.com",
-      "color": Colors.orange,
-    },
-  ];
+  Future<void> _fetchAllTeams() async {
+    List<String> teams = ["security_team", "maintenance_team", "admin_staff"];
+    Map<String, List<Map<String, dynamic>>> tempStaffMembers = {};
 
-  void _removeStaffMember(List<Map<String, dynamic>> team, String name) {
+    for (var team in teams) {
+      QuerySnapshot snapshot = await _firestore.collection('$staffPath/$team/members').get();
+      tempStaffMembers[team] = snapshot.docs
+          .map((doc) => {...doc.data() as Map<String, dynamic>, 'id': doc.id})
+          .toList();
+    }
     setState(() {
-      team.removeWhere((member) => member['name'] == name);
+      staffMembers = tempStaffMembers;
     });
   }
 
-  void _addStaffMember(List<Map<String, dynamic>> team) {
-    setState(() {
-      team.add({
-        "name": "New Member",
-        "position": "New Position",
-        "details": "Details",
-        "color": Colors.grey,
-      });
+  Future<void> _addStaffMember(String team, String name, String position) async {
+    await _firestore.collection('$staffPath/$team/members').add({
+      "name": name,
+      "position": position,
+      "color": "grey",
     });
+    _fetchAllTeams();
+  }
+
+  Future<void> _removeStaffMember(String team, String docId) async {
+    await _firestore.collection('$staffPath/$team/members').doc(docId).delete();
+    _fetchAllTeams();
+  }
+
+  void _showAddStaffDialog() {
+    TextEditingController teamController = TextEditingController();
+    TextEditingController nameController = TextEditingController();
+    TextEditingController positionController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text("Add New Staff Member"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: teamController,
+                decoration: InputDecoration(labelText: "Team (e.g., Security, Maintenance)"),
+              ),
+              TextField(
+                controller: nameController,
+                decoration: InputDecoration(labelText: "Name"),
+              ),
+              TextField(
+                controller: positionController,
+                decoration: InputDecoration(labelText: "Position"),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text("Cancel"),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                String teamKey = teamController.text.trim().toLowerCase().replaceAll(" ", "_");
+                if (teamKey.isNotEmpty &&
+                    nameController.text.isNotEmpty &&
+                    positionController.text.isNotEmpty) {
+                  _addStaffMember(
+                    teamKey,
+                    nameController.text.trim(),
+                    positionController.text.trim(),
+                  );
+                  Navigator.pop(context);
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("Please fill all fields!")),
+                  );
+                }
+              },
+              child: Text("Add"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _confirmDeleteStaff(String team, String docId) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text("Delete Staff Member"),
+          content: Text("Are you sure you want to remove this staff member?"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text("Cancel"),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                _removeStaffMember(team, docId);
+                Navigator.pop(context);
+              },
+              child: Text("Delete"),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -79,151 +141,66 @@ class _AdminStaffManagementPageState extends State<AdminStaffManagementPage> {
         automaticallyImplyLeading: false,
         toolbarHeight: 100,
         backgroundColor: Color(0xFFCC00FF),
-        title: _buildHeader(),
+        title: Text("SAFE HOOD",
+            style: TextStyle(fontSize: 30, color: Colors.white, fontWeight: FontWeight.bold)),
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildTeamSection("Security Team", securityTeam),
-            _buildTeamSection("Maintenance Team", maintenanceTeam),
-            _buildTeamSection("Administrative Staff", adminStaff),
-            SizedBox(height: 16),
-            _buildSectionTitle("Emergency Contacts"),
-            _buildEmergencyButton(
-              "Call Emergency Services (911)",
-              Colors.red,
-              Icons.warning,
-              () {},
-            ),
-            _buildEmergencyButton(
-              "Building Emergency Line",
-              Colors.red,
-              Icons.phone,
-              () {},
-            ),
+            _buildTeamSection("Security Team", "security_team"),
+            _buildTeamSection("Maintenance Team", "maintenance_team"),
+            _buildTeamSection("Administrative Staff", "admin_staff"),
           ],
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.green,
+        child: Icon(Icons.add, color: Colors.white),
+        onPressed: _showAddStaffDialog,
       ),
     );
   }
 
-  Widget _buildTeamSection(String title, List<Map<String, dynamic>> team) {
+  Widget _buildTeamSection(String title, String team) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionTitle(title),
-        for (var member in team)
-          Dismissible(
-            key: Key(member['name']), // Unique key per staff member
-            direction: DismissDirection.endToStart,
-            onDismissed:
-                (direction) => _removeStaffMember(team, member['name']),
-            background: Container(
-              alignment: Alignment.centerRight,
-              padding: EdgeInsets.symmetric(horizontal: 20),
-              color: Colors.red,
-              child: Icon(Icons.delete, color: Colors.white),
-            ),
-            child: _buildStaffCard(member),
-          ),
-        IconButton(
-          icon: Icon(Icons.add_circle, color: Colors.green),
-          onPressed: () => _addStaffMember(team),
+        Padding(
+          padding: EdgeInsets.symmetric(vertical: 8),
+          child: Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         ),
+        staffMembers.containsKey(team) == false
+            ? Center(child: CircularProgressIndicator())
+            : staffMembers[team]!.isEmpty
+                ? Text("No staff available.", style: TextStyle(fontSize: 16))
+                : Column(
+                    children: staffMembers[team]!.map((member) {
+                      return _buildStaffCard(team, member);
+                    }).toList(),
+                  ),
         SizedBox(height: 16),
       ],
     );
   }
 
-  Widget _buildSectionTitle(String title) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 8),
-      child: Text(
-        title,
-        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-      ),
-    );
-  }
-
-  Widget _buildStaffCard(Map<String, dynamic> member) {
+  Widget _buildStaffCard(String team, Map<String, dynamic> member) {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: member['color'],
+          backgroundColor: Colors.grey,
           child: Icon(Icons.person, color: Colors.white),
         ),
-        title: Text(
-          member['name'],
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              member['position'],
-              style: TextStyle(fontSize: 14, color: Colors.black87),
-            ),
-            SizedBox(height: 4),
-            Text(
-              member['details'],
-              style: TextStyle(fontSize: 12, color: Colors.black54),
-            ),
-          ],
+
+        title: Text(member['name'], style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        subtitle: Text(member['position'], style: TextStyle(fontSize: 14, color: Colors.black87)),
+        trailing: IconButton(
+          icon: Icon(Icons.delete, color: Colors.red),
+          onPressed: () => _confirmDeleteStaff(team, member['id']),
         ),
       ),
-    );
-  }
-
-  Widget _buildEmergencyButton(
-    String text,
-    Color color,
-    IconData icon,
-    VoidCallback onPressed,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: ElevatedButton.icon(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: color,
-          padding: EdgeInsets.symmetric(vertical: 12),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-        icon: Icon(icon, color: Colors.white),
-        label: Text(text, style: TextStyle(fontSize: 16, color: Colors.white)),
-        onPressed: onPressed,
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Row(
-      children: [
-        Container(
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(color: Colors.white, width: 3),
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(50),
-            child: Image.asset("assets/logo.jpg", height: 60),
-          ),
-        ),
-        SizedBox(width: 10),
-        Text(
-          "SAFE HOOD",
-          style: TextStyle(
-            fontSize: 30,
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontFamily: "Merriweather",
-          ),
-        ),
-      ],
     );
   }
 }
