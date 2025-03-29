@@ -61,7 +61,6 @@ class _ManageComplaintsScreenState extends State<ManageComplaintsScreen> {
         .collection('flatcode')
         .doc(_flatCode)
         .collection('complaints')
-        .where('doorNumber', isEqualTo: _doorNumber) // ✅ Filter by doorNumber
         .orderBy('timestamp', descending: true)
         .snapshots();
   }

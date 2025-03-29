@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 class GuardPatrolPage extends StatefulWidget {
+  const GuardPatrolPage({super.key});
+
   @override
   _GuardPatrolPageState createState() => _GuardPatrolPageState();
 }

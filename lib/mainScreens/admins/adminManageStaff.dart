@@ -4,23 +4,54 @@ class AdminStaffManagementPage extends StatefulWidget {
   const AdminStaffManagementPage({super.key});
 
   @override
-  _AdminStaffManagementPageState createState() => _AdminStaffManagementPageState();
+  _AdminStaffManagementPageState createState() =>
+      _AdminStaffManagementPageState();
 }
 
 class _AdminStaffManagementPageState extends State<AdminStaffManagementPage> {
   List<Map<String, dynamic>> securityTeam = [
-    {"name": "John Martinez", "position": "Head of Security", "details": "Available 24/7", "color": Colors.blue},
-    {"name": "Sarah Wilson", "position": "Night Shift Supervisor", "details": "8:00 PM - 5:00 AM", "color": Colors.blue},
+    {
+      "name": "John Martinez",
+      "position": "Head of Security",
+      "details": "Available 24/7",
+      "color": Colors.blue,
+    },
+    {
+      "name": "Sarah Wilson",
+      "position": "Night Shift Supervisor",
+      "details": "8:00 PM - 5:00 AM",
+      "color": Colors.blue,
+    },
   ];
 
   List<Map<String, dynamic>> maintenanceTeam = [
-    {"name": "Robert Chen", "position": "Lead Maintenance Engineer", "details": "Mon-Fri: 8:00 AM - 5:00 PM", "color": Colors.teal},
-    {"name": "Mike Thompson", "position": "General Maintenance", "details": "Mon-Fri: 8:00 AM - 5:00 PM", "color": Colors.teal},
+    {
+      "name": "Robert Chen",
+      "position": "Lead Maintenance Engineer",
+      "details": "Mon-Fri: 8:00 AM - 5:00 PM",
+      "color": Colors.teal,
+    },
+    {
+      "name": "Mike Thompson",
+      "position": "General Maintenance",
+      "details": "Mon-Fri: 8:00 AM - 5:00 PM",
+      "color": Colors.teal,
+    },
   ];
 
   List<Map<String, dynamic>> adminStaff = [
-    {"name": "Emily Parker", "position": "Community Manager", "details": "emily.parker@safehood.com", "color": Colors.orange},
-    {"name": "David Kim", "position": "Resident Services Coordinator", "details": "david.kim@safehood.com", "color": Colors.orange},
+    {
+      "name": "Emily Parker",
+      "position": "Community Manager",
+      "details": "emily.parker@safehood.com",
+      "color": Colors.orange,
+    },
+    {
+      "name": "David Kim",
+      "position": "Resident Services Coordinator",
+      "details": "david.kim@safehood.com",
+      "color": Colors.orange,
+    },
   ];
 
   void _removeStaffMember(List<Map<String, dynamic>> team, String name) {
@@ -35,7 +66,7 @@ class _AdminStaffManagementPageState extends State<AdminStaffManagementPage> {
         "name": "New Member",
         "position": "New Position",
         "details": "Details",
-        "color": Colors.grey
+        "color": Colors.grey,
       });
     });
   }
@@ -60,8 +91,18 @@ class _AdminStaffManagementPageState extends State<AdminStaffManagementPage> {
             _buildTeamSection("Administrative Staff", adminStaff),
             SizedBox(height: 16),
             _buildSectionTitle("Emergency Contacts"),
-            _buildEmergencyButton("Call Emergency Services (911)", Colors.red, Icons.warning, () {}),
-            _buildEmergencyButton("Building Emergency Line", Colors.red, Icons.phone, () {}),
+            _buildEmergencyButton(
+              "Call Emergency Services (911)",
+              Colors.red,
+              Icons.warning,
+              () {},
+            ),
+            _buildEmergencyButton(
+              "Building Emergency Line",
+              Colors.red,
+              Icons.phone,
+              () {},
+            ),
           ],
         ),
       ),
@@ -77,7 +118,8 @@ class _AdminStaffManagementPageState extends State<AdminStaffManagementPage> {
           Dismissible(
             key: Key(member['name']), // Unique key per staff member
             direction: DismissDirection.endToStart,
-            onDismissed: (direction) => _removeStaffMember(team, member['name']),
+            onDismissed:
+                (direction) => _removeStaffMember(team, member['name']),
             background: Container(
               alignment: Alignment.centerRight,
               padding: EdgeInsets.symmetric(horizontal: 20),
@@ -98,7 +140,10 @@ class _AdminStaffManagementPageState extends State<AdminStaffManagementPage> {
   Widget _buildSectionTitle(String title) {
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 8),
-      child: Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+      child: Text(
+        title,
+        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+      ),
     );
   }
 
@@ -110,27 +155,43 @@ class _AdminStaffManagementPageState extends State<AdminStaffManagementPage> {
           backgroundColor: member['color'],
           child: Icon(Icons.person, color: Colors.white),
         ),
-        title: Text(member['name'], style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        title: Text(
+          member['name'],
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(member['position'], style: TextStyle(fontSize: 14, color: Colors.black87)),
+            Text(
+              member['position'],
+              style: TextStyle(fontSize: 14, color: Colors.black87),
+            ),
             SizedBox(height: 4),
-            Text(member['details'], style: TextStyle(fontSize: 12, color: Colors.black54)),
+            Text(
+              member['details'],
+              style: TextStyle(fontSize: 12, color: Colors.black54),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildEmergencyButton(String text, Color color, IconData icon, VoidCallback onPressed) {
+  Widget _buildEmergencyButton(
+    String text,
+    Color color,
+    IconData icon,
+    VoidCallback onPressed,
+  ) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: ElevatedButton.icon(
         style: ElevatedButton.styleFrom(
           backgroundColor: color,
           padding: EdgeInsets.symmetric(vertical: 12),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
         icon: Icon(icon, color: Colors.white),
         label: Text(text, style: TextStyle(fontSize: 16, color: Colors.white)),

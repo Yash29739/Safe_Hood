@@ -6,6 +6,7 @@ import 'package:safe_hood/mainScreens/admins/adminManageStaff.dart';
 import 'package:safe_hood/mainScreens/admins/adminmanageevents.dart';
 import 'package:safe_hood/mainScreens/admins/adminrulesand%20regulation.dart';
 import 'package:safe_hood/mainScreens/admins/adminvisitors.dart';
+import 'package:safe_hood/mainScreens/users/community/friend_list_screen.dart';
 
 class AdminDashboard extends StatelessWidget {
   const AdminDashboard({super.key});
@@ -38,6 +39,12 @@ class AdminDashboard extends StatelessWidget {
               "Maintenance Issues",
               Icons.toll_outlined,
               const AdminMaintenance(),
+            ),
+            _buildGridItem(
+              context,
+              "Friends",
+              Icons.man,
+              const FriendListScreen(),
             ),
             _buildGridItem(
               context,

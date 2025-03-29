@@ -2,6 +2,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 
 class IncidentReportsPage extends StatefulWidget {
+  const IncidentReportsPage({super.key});
+
   @override
   _IncidentReportsPageState createState() => _IncidentReportsPageState();
 }

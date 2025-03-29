@@ -5,6 +5,8 @@ import 'package:safe_hood/mainScreens/Security/incident_report.dart';
 import 'package:safe_hood/mainScreens/users/community/visitorenteryscreen.dart';
 
 class SecurityDashboard extends StatelessWidget {
+  const SecurityDashboard({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -51,7 +53,7 @@ class DashboardCard extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
 
-  DashboardCard({required this.title, required this.icon, required this.onTap});
+  const DashboardCard({super.key, required this.title, required this.icon, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
