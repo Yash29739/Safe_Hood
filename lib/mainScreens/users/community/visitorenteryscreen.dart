@@ -33,7 +33,7 @@ class _VisitorEntryScreenState extends State<VisitorEntryScreen> {
     return FirebaseFirestore.instance
         .collection('flatcode')
         .doc(_flatCode)
-        .collection('visitors_log')
+        .collection('visitors') // ✅ Correct path
         .orderBy('time', descending: true)
         .snapshots();
   }
@@ -119,13 +119,19 @@ class _VisitorEntryScreenState extends State<VisitorEntryScreen> {
 
                           List<DocumentSnapshot> docs = snapshot.data!.docs;
                           List<DocumentSnapshot> filteredDocs =
-                              docs
-                                  .where(
-                                    (doc) => doc["name"].toLowerCase().contains(
-                                      _searchController.text.toLowerCase(),
-                                    ),
-                                  )
-                                  .toList();
+                              docs.where((doc) {
+                                Map<String, dynamic> visitor =
+                                    doc.data() as Map<String, dynamic>;
+                                String query =
+                                    _searchController.text.toLowerCase();
+                                return visitor["name"].toLowerCase().contains(
+                                      query,
+                                    ) ||
+                                    visitor["purpose"].toLowerCase().contains(
+                                      query,
+                                    ) ||
+                                    visitor["room"].toString().contains(query);
+                              }).toList();
 
                           return ListView.builder(
                             itemCount: filteredDocs.length,
@@ -183,16 +189,24 @@ class _VisitorEntryScreenState extends State<VisitorEntryScreen> {
         leading: CircleAvatar(
           backgroundColor: Colors.purple,
           child: Text(
-            visitor["name"][0],
+            visitor["name"][0].toUpperCase(),
             style: const TextStyle(color: Colors.white),
           ),
         ),
         title: Text(visitor["name"]),
         subtitle: Text(
-          "Purpose: ${visitor["purpose"]}\nTime: ${visitor["time"]}",
+          "Room: ${visitor["room"]}\n"
+          "Purpose: ${visitor["purpose"]}\n"
+          "Time: ${_formatTime(visitor["time"])}",
         ),
       ),
     );
+  }
+
+  // 🕒 Format Timestamp to Readable Date
+  String _formatTime(Timestamp timestamp) {
+    DateTime date = timestamp.toDate();
+    return "${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute}";
   }
 
   // 🎨 Build Header for AppBar

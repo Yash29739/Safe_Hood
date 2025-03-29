@@ -28,6 +28,7 @@ class AuthController {
       String? hashedPassword = userData["password"];
       String? flatCode = userData["flatCode"];
       String? userName = userData["name"];
+      String? role = userData["role"];
       String? doorNumber = userData["doorNumber"];
 
       // Verify the password usng bcrypt
@@ -41,6 +42,7 @@ class AuthController {
       await prefs.setString("userId", email!);
       await prefs.setString("userName", userName!);
       await prefs.setString("flatCode", flatCode!);
+      await prefs.setString("role", role!);
       await prefs.setString("doorNumber", doorNumber!);
       await prefs.setBool("isLoggedIn", true);
 

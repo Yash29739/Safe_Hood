@@ -1,52 +1,229 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class VisitorEntryScreen extends StatefulWidget {
   const VisitorEntryScreen({super.key});
 
   @override
-  _VisitorEntryScreenState createState() => _VisitorEntryScreenState();
+  State<VisitorEntryScreen> createState() => _VisitorEntryScreenState();
 }
 
 class _VisitorEntryScreenState extends State<VisitorEntryScreen> {
   final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _roomController = TextEditingController();
   final TextEditingController _purposeController = TextEditingController();
   final TextEditingController _searchController = TextEditingController();
+  final TextEditingController _pinController = TextEditingController();
 
-  final List<Map<String, String>> _visitorList = [];
-  List<Map<String, String>> _filteredVisitors = [];
-
-  void _addVisitor() {
-    if (_nameController.text.isNotEmpty && _purposeController.text.isNotEmpty) {
-      setState(() {
-        _visitorList.add({
-          "name": _nameController.text,
-          "purpose": _purposeController.text,
-          "time": TimeOfDay.now().format(context),
-        });
-        _filteredVisitors = List.from(_visitorList);
-      });
-      _nameController.clear();
-      _purposeController.clear();
-    }
-  }
-
-  void _searchVisitor(String query) {
-    setState(() {
-      _filteredVisitors =
-          _visitorList
-              .where(
-                (visitor) => visitor["name"]!.toLowerCase().contains(
-                  query.toLowerCase(),
-                ),
-              )
-              .toList();
-    });
-  }
+  bool _isAuthenticated = false;
+  final String _watchmanPin = "1234";
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   @override
   void initState() {
     super.initState();
-    _filteredVisitors = List.from(_visitorList);
+    Future.delayed(Duration.zero, _showPinDialog);
+  }
+
+  void _showPinDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder:
+          (context) => AlertDialog(
+            title: const Text("Enter Watchman PIN"),
+            content: TextField(
+              controller: _pinController,
+              obscureText: true,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: "PIN"),
+            ),
+            actions: [
+              TextButton(onPressed: _verifyPin, child: const Text("Submit")),
+            ],
+          ),
+    );
+  }
+
+  // ✅ Verify PIN
+  void _verifyPin() {
+    if (_pinController.text == _watchmanPin) {
+      setState(() {
+        _isAuthenticated = true;
+      });
+      Navigator.pop(context); // ✅ Close PIN dialog
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Incorrect PIN! Please try again."),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+    _pinController.clear(); // ✅ Clear PIN after verification
+  }
+
+  // ✅ Add Visitor to Firestore Inside Correct Path
+  Future<void> _addVisitor() async {
+    if (_isAuthenticated &&
+        _nameController.text.isNotEmpty &&
+        _phoneController.text.isNotEmpty &&
+        _roomController.text.isNotEmpty &&
+        _purposeController.text.isNotEmpty) {
+      try {
+        // ✅ Get flatCode from SharedPreferences
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        String? flatCode = prefs.getString("flatCode");
+
+        if (flatCode == null || flatCode.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Error: Flat code not found!"),
+              backgroundColor: Colors.red,
+            ),
+          );
+          return;
+        }
+
+        // ✅ Store visitor data under correct path: /flatcode/{flatCode}/visitors/
+        await _firestore
+            .collection('flatcode') // ✅ Main collection
+            .doc(flatCode) // ✅ Correct flatCode document
+            .collection('visitors') // ✅ Store inside visitors collection
+            .add({
+              "name": _nameController.text,
+              "phone": _phoneController.text,
+              "room": _roomController.text,
+              "purpose": _purposeController.text,
+              "time": Timestamp.now(),
+            });
+
+        _clearFields(); // ✅ Clear input fields after adding visitor
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Visitor added successfully!"),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Error adding visitor: $e")));
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("All fields are required!"),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  // ✅ Clear Input Fields
+  void _clearFields() {
+    _nameController.clear();
+    _phoneController.clear();
+    _roomController.clear();
+    _purposeController.clear();
+  }
+
+  // ✅ Fetch Visitor Logs from Firestore Inside Correct Path
+  Stream<QuerySnapshot> _fetchVisitorLogs() async* {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? flatCode = prefs.getString("flatCode");
+
+    if (flatCode == null || flatCode.isEmpty) {
+      yield* const Stream.empty();
+    } else {
+      yield* _firestore
+          .collection('flatcode')
+          .doc(flatCode) // ✅ Correct flatCode document
+          .collection('visitors') // ✅ Fetch visitors from correct path
+          .orderBy('time', descending: true)
+          .snapshots();
+    }
+  }
+
+  // ✅ Build Visitor List with Search Feature
+  Widget _buildVisitorList(QuerySnapshot snapshot) {
+    var visitors = snapshot.docs;
+    String query = _searchController.text.toLowerCase();
+
+    // ✅ Filter based on search query
+    List filteredVisitors =
+        visitors.where((visitor) {
+          var data = visitor.data() as Map<String, dynamic>;
+          return data['name'].toString().toLowerCase().contains(query) ||
+              data['phone'].toString().contains(query) ||
+              data['room'].toString().contains(query);
+        }).toList();
+
+    if (filteredVisitors.isEmpty) {
+      return const Center(
+        child: Text(
+          "No matching visitor logs found!",
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+            color: Colors.purple,
+          ),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      itemCount: filteredVisitors.length,
+      itemBuilder: (context, index) {
+        var visitor = filteredVisitors[index].data() as Map<String, dynamic>;
+        DateTime visitTime = DateTime.fromMillisecondsSinceEpoch(
+          visitor['time'].millisecondsSinceEpoch,
+        );
+
+        return Card(
+          margin: const EdgeInsets.symmetric(vertical: 8),
+          child: ListTile(
+            leading: CircleAvatar(
+              backgroundColor: Colors.purple,
+              child: Text(
+                visitor['name'][0].toUpperCase(),
+                style: const TextStyle(color: Colors.white),
+              ),
+            ),
+            title: Text(visitor['name']),
+            subtitle: Text(
+              "Phone: ${visitor['phone']}\n"
+              "Room: ${visitor['room']}\n"
+              "Purpose: ${visitor['purpose']}\n"
+              "Time: ${visitTime.toLocal()}",
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // ✅ Build Text Field Widget
+  Widget _buildTextField(
+    TextEditingController controller,
+    String label, [
+    TextInputType type = TextInputType.text,
+  ]) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: TextField(
+        controller: controller,
+        keyboardType: type,
+        decoration: InputDecoration(
+          labelText: label,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+          filled: true,
+          fillColor: Colors.white,
+        ),
+      ),
+    );
   }
 
   @override
@@ -57,18 +234,13 @@ class _VisitorEntryScreenState extends State<VisitorEntryScreen> {
         automaticallyImplyLeading: false,
         toolbarHeight: 100,
         backgroundColor: const Color(0xFFCC00FF),
-        title: Column(
-          children: [
-            _buildHeader(),
-            const Text(
-              "Visitor's",
-              style: TextStyle(
-                fontSize: 24,
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
+        title: const Text(
+          "Visitor Log",
+          style: TextStyle(
+            fontSize: 24,
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
       body: Padding(
@@ -76,159 +248,73 @@ class _VisitorEntryScreenState extends State<VisitorEntryScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            TextField(
-              controller: _nameController,
-              decoration: InputDecoration(
-                labelText: "Visitor Name",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                filled: true,
-                fillColor: Colors.white, // TextField background color white
+            if (_isAuthenticated) ...[
+              _buildTextField(_nameController, "Visitor Name"),
+              _buildTextField(
+                _phoneController,
+                "Phone Number",
+                TextInputType.phone,
               ),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: _purposeController,
-              decoration: InputDecoration(
-                labelText: "Purpose of Visit",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                filled: true,
-                fillColor: Colors.white, // TextField background color white
-              ),
-            ),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _addVisitor,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor:
-                      Colors.white, // Button background color white
-                  foregroundColor: Colors.purple, // Button text color purple
-                ),
-                child: const Text(
-                  "Add Visitor",
-                  style: TextStyle(fontWeight: FontWeight.bold),
+              _buildTextField(_roomController, "Room Number"),
+              _buildTextField(_purposeController, "Purpose of Visit"),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _addVisitor,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.purple,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text(
+                    "Add Visitor",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 20),
+              const SizedBox(height: 20),
+            ],
+            // ✅ Search Field
             TextField(
               controller: _searchController,
-              onChanged: _searchVisitor,
+              onChanged:
+                  (value) => setState(() {}), // ✅ Update search dynamically
               decoration: InputDecoration(
                 labelText: "Search Visitor",
-                prefixIcon: const Icon(
-                  Icons.search,
-                  color: Colors.purple,
-                ), // Search icon color
+                prefixIcon: const Icon(Icons.search, color: Colors.purple),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
                 filled: true,
-                fillColor: Colors.white, // Search bar background color white
+                fillColor: Colors.white,
               ),
             ),
             const SizedBox(height: 20),
-            Center(
-              child: const Text(
-                "Visitor Log",
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Color.fromARGB(255, 38, 38, 38),
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-            const SizedBox(height: 10),
+            // ✅ Visitor List with Real-time Updates
             Expanded(
-              child: Center(
-                child:
-                    _filteredVisitors.isEmpty
-                        ? Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(10),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.grey.withOpacity(0.5),
-                                spreadRadius: 2,
-                                blurRadius: 5,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: const Center(
-                            child: Text(
-                              "No visitor logs available",
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.purple,
-                              ),
-                            ),
-                          ),
-                        )
-                        : ListView.builder(
-                          itemCount: _filteredVisitors.length,
-                          itemBuilder: (context, index) {
-                            final visitor = _filteredVisitors[index];
-                            return Card(
-                              margin: const EdgeInsets.symmetric(vertical: 8),
-                              child: ListTile(
-                                leading: CircleAvatar(
-                                  backgroundColor: Colors.purple,
-                                  child: Text(
-                                    visitor["name"]![0],
-                                    style: const TextStyle(color: Colors.white),
-                                  ),
-                                ),
-                                title: Text(visitor["name"]!),
-                                subtitle: Text(
-                                  "Purpose: ${visitor["purpose"]}\nTime: ${visitor["time"]}",
-                                ),
-                              ),
-                            );
-                          },
-                        ),
+              child: StreamBuilder<QuerySnapshot>(
+                stream: _fetchVisitorLogs(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(
+                      child: CircularProgressIndicator(color: Colors.purple),
+                    );
+                  }
+                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                    return const Center(
+                      child: Text(
+                        "No visitor logs available!",
+                        style: TextStyle(fontSize: 16, color: Colors.purple),
+                      ),
+                    );
+                  }
+                  return _buildVisitorList(snapshot.data!);
+                },
               ),
             ),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Row(
-      children: [
-        Container(
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(color: Colors.white, width: 3),
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(50),
-            child: Image.asset("assets/logo.jpg", height: 60),
-          ),
-        ),
-        const SizedBox(width: 10),
-        const Text(
-          "SAFE HOOD",
-          style: TextStyle(
-            fontSize: 40,
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontFamily: "Merriweather",
-          ),
-        ),
-      ],
     );
   }
 }

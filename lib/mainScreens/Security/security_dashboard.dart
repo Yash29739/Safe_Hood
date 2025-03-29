@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:safe_hood/mainScreens/Security/emergency_contact.dart';
 import 'package:safe_hood/mainScreens/Security/gaurd_patrol.dart';
 import 'package:safe_hood/mainScreens/Security/incident_report.dart';
-import 'package:safe_hood/mainScreens/users/community/visitorenteryscreen.dart';
+import 'package:safe_hood/mainScreens/Security/visitors_log.dart';
 
 class SecurityDashboard extends StatelessWidget {
   const SecurityDashboard({super.key});
@@ -53,7 +53,12 @@ class DashboardCard extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
 
-  const DashboardCard({super.key, required this.title, required this.icon, required this.onTap});
+  const DashboardCard({
+    super.key,
+    required this.title,
+    required this.icon,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {

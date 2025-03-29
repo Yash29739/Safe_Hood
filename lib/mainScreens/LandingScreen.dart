@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:safe_hood/mainScreens/chat.dart';
 import 'package:safe_hood/mainScreens/users/SafeHoodDashBoard.dart';
 import 'package:safe_hood/mainScreens/Security/security_dashboard.dart';
-import 'package:safe_hood/mainScreens/admins/AdminNearByShops.dart';
 import 'package:safe_hood/mainScreens/admins/dashbroadadmin.dart';
 import 'package:safe_hood/mainScreens/nearbyShops_screen.dart';
 import 'package:safe_hood/mainScreens/profile/Profile.dart';
@@ -48,7 +47,7 @@ class _LandingScreenState extends State<LandingScreen> {
         _pages = [
           AdminDashboard(),
           const ApartmentChatScreen(),
-          const AdminNearByShops(),
+          const NearByShops(),
           const ProfileScreen(),
         ];
         break;

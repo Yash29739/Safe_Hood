@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:safe_hood/mainScreens/users/community/friend_list_screen.dart';
 import 'package:safe_hood/mainScreens/users/community/neighbor_profile_screen.dart';
 import 'package:safe_hood/mainScreens/users/community/todo_list_screen.dart';
 import 'package:safe_hood/mainScreens/users/community/visitorenteryscreen.dart';
 import 'package:safe_hood/mainScreens/users/service/CommunityNoticeBoard.dart';
 import 'package:safe_hood/mainScreens/users/service/communityRules.dart';
 import 'package:safe_hood/mainScreens/users/service/complaintscreen.dart';
+import 'package:safe_hood/mainScreens/users/service/event_request_screen.dart';
 import 'package:safe_hood/mainScreens/users/service/maintenancerequestscreen.dart';
 import 'package:safe_hood/mainScreens/users/service/safffdirectory.dart';
 import 'package:safe_hood/mainScreens/users/service/upcomingevents.dart';
@@ -87,12 +87,6 @@ class _SafeHoodDashboardState extends State<SafeHoodDashboard> {
                           context,
                         ),
                         _gridItem(
-                          "Friends",
-                          Icons.people_alt,
-                          FriendListScreen(),
-                          context,
-                        ),
-                        _gridItem(
                           "Neighbors Screen",
                           Icons.home,
                           NeighborProfileScreen(),
@@ -102,6 +96,12 @@ class _SafeHoodDashboardState extends State<SafeHoodDashboard> {
                           "Community Events",
                           Icons.event,
                           UpcomingEventsScreen(),
+                          context,
+                        ),
+                        _gridItem(
+                          "Host Events",
+                          Icons.event,
+                          EventRequestScreen(),
                           context,
                         ),
                       ]),
